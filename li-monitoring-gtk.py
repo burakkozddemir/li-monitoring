@@ -21,7 +21,7 @@ CONFIG_FILE = Path.home() / ".config" / "li-monitoring" / "config.json"
 CTL = "/usr/local/bin/li-battery-ctl"
 
 APP_NAME = "li-monitoring"
-APP_VERSION = "1.5.1"
+APP_VERSION = "1.6.0"
 DEVELOPER = "Burak Özdemir"
 GITHUB = "https://github.com/burakkozddemir"
 WEBSITE = "https://codefein.com"
@@ -81,6 +81,8 @@ STRINGS = {
         "time_to_full": "Time to full",
         "time_to_empty": "Time to empty",
         "no_estimate": "Time estimate: n/a",
+        "time_estimate": "Time estimate",
+        "charge_level": "Charge level",
         "history_avg": "History avg",
         "samples": "samples",
         "health_good": "Good",
@@ -151,6 +153,8 @@ STRINGS = {
         "time_to_full": "Şarja kalan",
         "time_to_empty": "Bitime kalan",
         "no_estimate": "Süre tahmini: yok",
+        "time_estimate": "Kalan süre",
+        "charge_level": "Şarj seviyesi",
         "history_avg": "Geçmiş ort",
         "samples": "örnek",
         "health_good": "İyi",
@@ -221,6 +225,8 @@ STRINGS = {
         "time_to_full": "Zeit bis voll",
         "time_to_empty": "Zeit bis leer",
         "no_estimate": "Zeitschätzung: k.A.",
+        "time_estimate": "Zeitschätzung",
+        "charge_level": "Ladezustand",
         "history_avg": "Verlauf Ø",
         "samples": "Proben",
         "health_good": "Gut",
@@ -291,6 +297,8 @@ STRINGS = {
         "time_to_full": "Temps de charge",
         "time_to_empty": "Autonomie restante",
         "no_estimate": "Estimation : n.d.",
+        "time_estimate": "Estimation",
+        "charge_level": "Niveau de charge",
         "history_avg": "Moy. historique",
         "samples": "échantillons",
         "health_good": "Bon",
@@ -361,6 +369,8 @@ STRINGS = {
         "time_to_full": "Tiempo de carga",
         "time_to_empty": "Autonomía restante",
         "no_estimate": "Estimación: n/d",
+        "time_estimate": "Estimación",
+        "charge_level": "Nivel de carga",
         "history_avg": "Prom. histórico",
         "samples": "muestras",
         "health_good": "Bueno",
@@ -617,6 +627,20 @@ menu menuitem:hover {
     color: #7d7d90;
     letter-spacing: 1px;
 }
+.m-label {
+    font-size: 11px;
+    color: #8f8fa0;
+}
+.m-value {
+    font-size: 15px;
+    font-weight: bold;
+    color: #d4d4de;
+}
+.m-green { color: #6fe3a1; }
+.m-yellow { color: #fdd663; }
+.m-red { color: #ff8a8a; }
+.m-blue { color: #7ab8ff; }
+.m-dim { color: #c6c6d4; }
 .grade {
     font-size: 15px;
     font-weight: bold;
@@ -850,6 +874,47 @@ class BatteryGraph(Gtk.DrawingArea):
         return False
 
 
+class HBar(Gtk.DrawingArea):
+    def __init__(self, width=200, height=10, color=None):
+        super().__init__()
+        self.set_size_request(width, height)
+        self.value = 0
+        self.color = color or (0.44, 0.89, 0.63)
+        self.connect("draw", self.on_draw)
+
+    def set_value(self, v, color=None):
+        self.value = max(0, min(100, v))
+        if color:
+            self.color = color
+        self.queue_draw()
+
+    @staticmethod
+    def _rrect(cr, x, y, w, h, r):
+        r = min(r, w / 2, h / 2)
+        cr.arc(x + r, y + r, r, 3.14159, 3.14159 * 3 / 2)
+        cr.arc(x + w - r, y + r, r, 3.14159 * 3 / 2, 3.14159 * 2)
+        cr.arc(x + w - r, y + h - r, r, 0, 3.14159 / 2)
+        cr.arc(x + r, y + h - r, r, 3.14159 / 2, 3.14159)
+        cr.close_path()
+
+    def on_draw(self, widget, cr):
+        w = widget.get_allocated_width()
+        h = widget.get_allocated_height()
+        if w <= 0 or h <= 0:
+            return False
+
+        cr.set_source_rgb(0.25, 0.25, 0.34)
+        self._rrect(cr, 0, 0, w, h, h / 2)
+        cr.fill()
+
+        fw = w * self.value / 100
+        if fw > h:
+            cr.set_source_rgb(*self.color)
+            self._rrect(cr, 0, 0, fw, h, h / 2)
+            cr.fill()
+        return False
+
+
 class AboutDialog(Gtk.AboutDialog):
     def __init__(self, parent):
         super().__init__(transient_for=parent, modal=True)
@@ -868,7 +933,7 @@ class AboutDialog(Gtk.AboutDialog):
 class LiMonitoringWindow(Gtk.Window):
     def __init__(self, battery):
         super().__init__(title=f"{APP_NAME} — {i18n.t('window_title')}")
-        self.set_default_size(680, 840)
+        self.set_default_size(720, 920)
         self.set_border_width(0)
         self.battery = battery
         self.history = self.load_history()
@@ -1002,7 +1067,7 @@ class LiMonitoringWindow(Gtk.Window):
         self.alarm_label.set_no_show_all(True)
         right.pack_start(self.alarm_label, False, False, 0)
 
-        det_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        det_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         det_card.get_style_context().add_class("card")
         grid.attach(det_card, 0, 3, 3, 1)
 
@@ -1010,14 +1075,53 @@ class LiMonitoringWindow(Gtk.Window):
         det_title.get_style_context().add_class("card-title")
         det_card.pack_start(det_title, False, False, 0)
 
-        self.detail_label = Gtk.Label()
-        self.detail_label.set_selectable(True)
-        self.detail_label.set_line_wrap(True)
-        self.detail_label.set_justify(Gtk.Justification.LEFT)
-        self.detail_label.set_halign(Gtk.Align.FILL)
-        self.detail_label.set_valign(Gtk.Align.START)
-        self.detail_label.set_xalign(0)
-        det_card.pack_start(self.detail_label, False, False, 0)
+        t = i18n.t
+        def metric(label):
+            tile = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
+            lbl = Gtk.Label(label=label, xalign=0)
+            lbl.get_style_context().add_class("m-label")
+            val = Gtk.Label(label="—", xalign=0)
+            val.get_style_context().add_class("m-value")
+            tile.pack_start(lbl, False, False, 0)
+            tile.pack_start(val, False, False, 0)
+            return tile, val
+
+        self.m_grid = Gtk.Grid(column_spacing=16, row_spacing=10)
+        self.m_grid.set_halign(Gtk.Align.FILL)
+        self.metrics = {}
+        order = [
+            ("health", t("health")),
+            ("cycle", t("cycle")),
+            ("temp", t("temperature")),
+            ("voltage", t("voltage")),
+            ("current", t("current")),
+            ("power", t("power")),
+            ("energy", t("energy")),
+            ("capacity", t("capacity")),
+            ("time", t("time_estimate")),
+        ]
+        for i, (key, label) in enumerate(order):
+            tile, val = metric(label)
+            self.metrics[key] = val
+            self.m_grid.attach(tile, i % 3, i // 3, 1, 1)
+        det_card.pack_start(self.m_grid, False, False, 0)
+
+        bars = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=24)
+        bars.set_halign(Gtk.Align.FILL)
+        bars.set_hexpand(True)
+        self.bar_health = self._bar_block(bars, t("health"))
+        self.bar_charge = self._bar_block(bars, t("charge_level"))
+        det_card.pack_start(bars, False, False, 0)
+
+        self.device_label = Gtk.Label(xalign=0)
+        self.device_label.get_style_context().add_class("m-label")
+        self.device_label.set_line_wrap(True)
+        self.device_label.set_selectable(True)
+        det_card.pack_start(self.device_label, False, False, 0)
+
+        self.history_label = Gtk.Label(xalign=0)
+        self.history_label.get_style_context().add_class("subtitle")
+        det_card.pack_start(self.history_label, False, False, 0)
 
         graph_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         graph_card.get_style_context().add_class("card")
@@ -1045,6 +1149,17 @@ class LiMonitoringWindow(Gtk.Window):
         self.btn_calibrate.get_style_context().add_class("btn-calibrate")
         self.btn_calibrate.connect("clicked", self.on_calibrate)
         btns.pack_start(self.btn_calibrate, False, False, 0)
+
+    def _bar_block(self, parent, label):
+        block = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        block.set_hexpand(True)
+        lbl = Gtk.Label(label=label, xalign=0)
+        lbl.get_style_context().add_class("m-label")
+        bar = HBar(width=200, height=10)
+        block.pack_start(lbl, False, False, 0)
+        block.pack_start(bar, False, False, 0)
+        parent.pack_start(block, True, True, 0)
+        return bar
 
     def refresh_conservation(self):
         def work():
@@ -1144,6 +1259,16 @@ class LiMonitoringWindow(Gtk.Window):
         GLib.timeout_add(4000, lambda: self.set_title(f"{APP_NAME} — {i18n.t('window_title')}"))
         return False
 
+    def set_metric(self, key, text, cls=None):
+        val = self.metrics.get(key)
+        if val is None:
+            return
+        ctx = val.get_style_context()
+        for c in ("m-green", "m-yellow", "m-red", "m-blue", "m-dim"):
+            ctx.remove_class(c)
+        ctx.add_class(cls or "m-dim")
+        val.set_text(text)
+
     def refresh(self):
         d = {}
         for name in (
@@ -1200,43 +1325,84 @@ class LiMonitoringWindow(Gtk.Window):
             self.alarm_label.hide()
 
         t = i18n.t
-        lines = []
-        if d.get("manufacturer"):
-            lines.append(f"{t('manufacturer'):11}: {d['manufacturer']}")
-        if d.get("model"):
-            lines.append(f"{t('model'):11}: {d['model']}")
-        if d.get("serial"):
-            lines.append(f"{t('serial'):11}: {d['serial']}")
-        if d.get("technology"):
-            lines.append(f"{t('chemistry'):11}: {d['technology']}")
-        lines.append("")
-        if d.get("energy_now") is not None:
-            lines.append(f"{t('energy'):11}: {fmt_energy(d['energy_now'])}")
-        if d.get("energy_full") is not None and d.get("energy_full_design") is not None:
-            lines.append(f"{t('capacity'):11}: {fmt_energy(d['energy_full'])} / {fmt_energy(d['energy_full_design'])}")
-        lines.append("")
+        if h is not None:
+            self.set_metric("health", f"{h:.1f}%",
+                            "m-green" if h >= 80 else "m-yellow" if h >= 60 else "m-red")
+        else:
+            self.set_metric("health", "—")
+
+        self.set_metric("cycle", str(cc) if cc is not None else "—", "m-blue" if cc is not None else None)
+
+        tp = d.get("temp")
+        if tp is not None:
+            c = tp / 10.0
+            self.set_metric("temp", f"{c:.1f} °C",
+                            "m-green" if c < 55 else "m-yellow" if c < 65 else "m-red")
+        else:
+            self.set_metric("temp", "—")
+
         if d.get("voltage_now") is not None:
-            lines.append(f"{t('voltage'):11}: {fmt_voltage(d['voltage_now'])}")
+            self.set_metric("voltage", fmt_voltage(d["voltage_now"]), "m-blue")
+        else:
+            self.set_metric("voltage", "—")
+
         if d.get("current_now") is not None:
-            lines.append(f"{t('current'):11}: {fmt_current(d['current_now'])}")
+            self.set_metric("current", fmt_current(d["current_now"]),
+                            "m-green" if status == "Charging" else "m-red")
+        else:
+            self.set_metric("current", "—")
+
         if d.get("power_now") is not None:
-            lines.append(f"{t('power'):11}: {fmt_power(d['power_now'])}")
-        if d.get("temp") is not None:
-            lines.append(f"{t('temperature'):11}: {d['temp'] / 10:.1f} °C")
-        lines.append("")
+            self.set_metric("power", fmt_power(d["power_now"]),
+                            "m-green" if status == "Charging" else "m-red")
+        else:
+            self.set_metric("power", "—")
+
+        if d.get("energy_now") is not None:
+            self.set_metric("energy", fmt_energy(d["energy_now"]))
+        else:
+            self.set_metric("energy", "—")
+
+        if d.get("energy_full") is not None and d.get("energy_full_design") is not None:
+            self.set_metric("capacity",
+                            f"{fmt_energy(d['energy_full'])} / {fmt_energy(d['energy_full_design'])}")
+        else:
+            self.set_metric("capacity", "—")
 
         est = estimate(d)
         if est is not None:
-            label = t("time_to_full") if status == "Charging" else t("time_to_empty")
-            lines.append(f"⏱ {label}: {fmt_duration(est)}")
+            self.set_metric("time", fmt_duration(est), "m-blue")
         else:
-            lines.append(f"⏱ {t('no_estimate')}")
+            self.set_metric("time", "—")
+
+        dev = []
+        if d.get("manufacturer"):
+            dev.append(d["manufacturer"])
+        if d.get("model"):
+            dev.append(d["model"])
+        if d.get("technology"):
+            dev.append(d["technology"])
+        if d.get("serial"):
+            dev.append(f"SN: {d['serial']}")
+        self.device_label.set_text("  •  ".join(dev) if dev else "—")
+
+        if h is not None:
+            self.bar_health.set_value(h, (0.44, 0.89, 0.63) if h >= 80
+                                      else (0.99, 0.84, 0.39) if h >= 60 else (0.95, 0.4, 0.4))
+        else:
+            self.bar_health.set_value(0, (0.25, 0.25, 0.34))
+        if cap is not None:
+            self.bar_charge.set_value(cap, (0.44, 0.89, 0.63) if cap >= 60
+                                      else (0.99, 0.84, 0.39) if cap >= 30 else (0.95, 0.4, 0.4))
+        else:
+            self.bar_charge.set_value(0, (0.25, 0.25, 0.34))
 
         if self.cap_samples:
-            lines.append(f"📈 {t('history_avg')}: %{sum(self.cap_samples) / len(self.cap_samples):.1f} "
-                         f"({len(self.cap_samples)} {t('samples')})")
-
-        self.detail_label.set_text("\n".join(lines))
+            self.history_label.set_text(
+                f"📈 {t('history_avg')}: %{sum(self.cap_samples) / len(self.cap_samples):.1f} "
+                f"({len(self.cap_samples)} {t('samples')})")
+        else:
+            self.history_label.set_text("")
 
         now = time.time()
         if self.logged_last is None or now - self.logged_last >= 60:
