@@ -41,13 +41,22 @@ do_install() {
     need_cmd curl
     need_cmd flatpak
 
-    local tmp
-    tmp=$(mktemp --suffix=.flatpak)
-    trap 'rm -f "$tmp"' EXIT
-
+    TMP_FILE=$(mktemp --suffix=.flatpak)
     echo "Downloading latest release from GitHub ..."
-    curl -fsSL "$BUNDLE_URL" -o "$tmp"
-    install_from_file "$tmp"
+    curl -fsSL "$BUNDLE_URL" -o "$TMP_FILE"
+    install_from_file "$TMP_FILE"
+}
+
+do_install_system() {
+    need_cmd curl
+    need_cmd flatpak
+    TMP_FILE=$(mktemp --suffix=.flatpak)
+    echo "Downloading latest release from GitHub ..."
+    curl -fsSL "$BUNDLE_URL" -o "$TMP_FILE"
+    echo "Installing $APP_ID system-wide ..."
+    sudo flatpak install --system --assumeyes "$TMP_FILE"
+    echo ""
+    echo "Done. Run it with:  flatpak run $APP_ID"
 }
 
 do_remove() {
@@ -57,17 +66,13 @@ do_remove() {
     echo "Done."
 }
 
+TMP_FILE=""
+trap 'rm -f "$TMP_FILE"' EXIT
+
 case "${1:-}" in
     --system)
-        echo "System-wide install requires sudo; installing into the system repo."
-        need_cmd curl
-        need_cmd flatpak
-        local tmp
-        tmp=$(mktemp --suffix=.flatpak)
-        trap 'rm -f "$tmp"' EXIT
-        curl -fsSL "$BUNDLE_URL" -o "$tmp"
-        sudo flatpak install --system --assumeyes "$tmp"
-        echo "Done. Run it with:  flatpak run $APP_ID"
+        echo "System-wide install (requires sudo)."
+        do_install_system
         ;;
     --file)
         [ -n "${2:-}" ] || { echo "error: --file requires a path"; usage; }
