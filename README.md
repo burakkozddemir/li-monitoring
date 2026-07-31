@@ -40,7 +40,7 @@ plus a one-click **conservation mode** toggle for Lenovo laptops and a guided
 ### Quick install (one line)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/burakkozddemir/li-monitoring/main/install.sh | bash
+curl -fsSL https://github.com/burakkozddemir/li-monitoring/releases/latest/download/install.sh | bash
 ```
 
 Or download the bundle manually and install it:
