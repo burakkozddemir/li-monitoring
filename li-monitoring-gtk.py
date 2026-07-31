@@ -21,7 +21,7 @@ CONFIG_FILE = Path.home() / ".config" / "li-monitoring" / "config.json"
 CTL = "/usr/local/bin/li-battery-ctl"
 
 APP_NAME = "li-monitoring"
-APP_VERSION = "1.4.0"
+APP_VERSION = "1.5.0"
 DEVELOPER = "Burak Özdemir"
 GITHUB = "https://github.com/burakkozddemir"
 WEBSITE = "https://codefein.com"
@@ -96,6 +96,8 @@ STRINGS = {
         "graph_gathering": "Collecting charge history…",
         "graph_capacity": "Capacity (%)",
         "dev": "Developer",
+        "section_details": "Details",
+        "section_history": "History",
     },
     "tr": {
         "lang_name": "Türkçe",
@@ -164,6 +166,8 @@ STRINGS = {
         "graph_gathering": "Şarj geçmişi toplanıyor…",
         "graph_capacity": "Kapasite (%)",
         "dev": "Geliştirici",
+        "section_details": "Detaylar",
+        "section_history": "Geçmiş",
     },
     "de": {
         "lang_name": "Deutsch",
@@ -232,6 +236,8 @@ STRINGS = {
         "graph_gathering": "Ladeverlauf wird gesammelt…",
         "graph_capacity": "Kapazität (%)",
         "dev": "Entwickler",
+        "section_details": "Details",
+        "section_history": "Verlauf",
     },
     "fr": {
         "lang_name": "Français",
@@ -300,6 +306,8 @@ STRINGS = {
         "graph_gathering": "Collecte de l'historique de charge…",
         "graph_capacity": "Capacité (%)",
         "dev": "Développeur",
+        "section_details": "Détails",
+        "section_history": "Historique",
     },
     "es": {
         "lang_name": "Español",
@@ -368,6 +376,8 @@ STRINGS = {
         "graph_gathering": "Recopilando historial de carga…",
         "graph_capacity": "Capacidad (%)",
         "dev": "Desarrollador",
+        "section_details": "Detalles",
+        "section_history": "Historial",
     },
 }
 
@@ -553,19 +563,36 @@ def get_conservation():
 
 CSS = b"""
 window {
-    background-color: #16161d;
+    background-image: linear-gradient(to bottom, #181822, #14141b);
     color: #e6e6ec;
     font-family: "DejaVu Sans", sans-serif;
 }
+.menubar { background-color: #131319; color: #c8c8d4; }
+.menubar > menuitem { padding: 4px 8px; }
+.menubar > menuitem:hover { background-color: #26263a; }
+
 .title {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: bold;
-    color: #7aa2ff;
-    padding: 6px 0 0 0;
+    color: #9db8ff;
+    letter-spacing: 0.5px;
+    padding: 2px 0 0 0;
 }
 .subtitle {
     font-size: 12px;
-    color: #9a9aa8;
+    color: #8f8fa0;
+}
+.card {
+    background-color: #1c1c27;
+    border: 1px solid #2b2b3a;
+    border-radius: 12px;
+    padding: 12px;
+}
+.card-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: #7d7d90;
+    letter-spacing: 1px;
 }
 .grade {
     font-size: 15px;
@@ -573,35 +600,43 @@ window {
 }
 .status-charging { color: #6fe3a1; }
 .status-discharging { color: #ff8a8a; }
-.status-full { color: #7aa2ff; }
+.status-full { color: #9db8ff; }
 .health-good { color: #6fe3a1; }
 .health-fair { color: #fdd663; }
 .health-poor { color: #ff8a8a; }
-.graph-label { font-size: 12px; color: #9a9aa8; }
+.graph-label { font-size: 12px; color: #8f8fa0; }
 .detail {
     font-size: 13px;
     color: #c6c6d4;
-    background-color: #1f1f2b;
-    border-radius: 8px;
-    padding: 10px;
+    background-color: #1c1c27;
+    border: 1px solid #2b2b3a;
+    border-radius: 12px;
+    padding: 12px;
 }
 .opt-btn {
     font-size: 14px;
     font-weight: bold;
     color: #ffffff;
     background-image: none;
-    border-radius: 8px;
-    padding: 8px 14px;
+    border-radius: 10px;
+    padding: 9px 18px;
     border: none;
 }
-.opt-btn:hover { background-color: rgba(255,255,255,0.12); }
-.btn-optimize { background-color: #3b6ea5; }
-.btn-calibrate { background-color: #8a5a2a; }
+.btn-optimize {
+    background-image: linear-gradient(to bottom, #5595d8, #2f5d8f);
+    border-bottom: 2px solid #22446a;
+}
+.btn-optimize:hover { background-image: linear-gradient(to bottom, #63a4e8, #386a9f); }
+.btn-calibrate {
+    background-image: linear-gradient(to bottom, #c07a35, #8a5a2a);
+    border-bottom: 2px solid #6b4520;
+}
+.btn-calibrate:hover { background-image: linear-gradient(to bottom, #d0883e, #9d682f); }
 .state-pill {
     font-size: 12px;
     font-weight: bold;
-    border-radius: 10px;
-    padding: 3px 10px;
+    border-radius: 12px;
+    padding: 4px 12px;
 }
 .pill-on { background-color: #2a7a4d; color: #dfffd0; }
 .pill-off { background-color: #4a4a58; color: #d0d0da; }
@@ -609,25 +644,65 @@ window {
 
 
 class DonutWidget(Gtk.DrawingArea):
-    def __init__(self, size=190):
+    def __init__(self, size=200):
         super().__init__()
         self.set_size_request(size, size)
         self.percent = 0
+        self.health = None
+        self.charging = False
         self.connect("draw", self.on_draw)
 
     def set_percent(self, p):
         self.percent = max(0, min(100, p))
         self.queue_draw()
 
+    def set_health(self, h):
+        self.health = None if h is None else max(0, min(100, h))
+        self.queue_draw()
+
+    def set_charging(self, c):
+        self.charging = bool(c)
+        self.queue_draw()
+
+    def _percent_color(self, p):
+        if p <= 30:
+            return (0.95, 0.4, 0.4)
+        if p <= 60:
+            return (0.99, 0.84, 0.39)
+        return (0.44, 0.89, 0.63)
+
+    def _health_color(self, h):
+        if h >= 80:
+            return (0.44, 0.89, 0.63)
+        if h >= 60:
+            return (0.99, 0.84, 0.39)
+        return (0.95, 0.4, 0.4)
+
+    def _bolt(self, cr, cx, cy, s):
+        pts = [
+            (-5, -14), (4, -14), (-1, -4), (8, -4),
+            (-6, 14), (-2, 3), (-9, 3),
+        ]
+        cr.save()
+        cr.translate(cx, cy)
+        cr.scale(s / 16, s / 16)
+        cr.move_to(pts[0][0], pts[0][1])
+        for x, y in pts[1:]:
+            cr.line_to(x, y)
+        cr.close_path()
+        cr.set_source_rgb(1, 0.9, 0.4)
+        cr.fill()
+        cr.restore()
+
     def on_draw(self, widget, cr):
-        cr.set_source_rgb(0.16, 0.16, 0.22)
+        cr.set_source_rgb(0.11, 0.11, 0.16)
         cr.paint()
 
         w = widget.get_allocated_width()
         h = widget.get_allocated_height()
         cx, cy = w / 2, h / 2
-        radius = min(w, h) / 2 - 14
-        line_w = 14
+        radius = min(w, h) / 2 - 16
+        line_w = 16
 
         cr.set_line_width(line_w)
         cr.set_line_cap(cairo.LineCap.ROUND)
@@ -636,22 +711,42 @@ class DonutWidget(Gtk.DrawingArea):
         cr.arc(cx, cy, radius, 0, 2 * 3.14159265)
         cr.stroke()
 
-        if self.percent <= 30:
-            cr.set_source_rgb(0.95, 0.4, 0.4)
-        elif self.percent <= 60:
-            cr.set_source_rgb(0.99, 0.84, 0.39)
-        else:
-            cr.set_source_rgb(0.44, 0.89, 0.63)
-
+        r, g, b = self._percent_color(self.percent)
+        cr.set_source_rgb(r, g, b)
         cr.arc(cx, cy, radius, -3.14159265 / 2, -3.14159265 / 2 + 2 * 3.14159265 * self.percent / 100)
         cr.stroke()
 
+        if self.health is not None:
+            r2 = radius - line_w - 6
+            cr.set_line_width(5)
+            cr.set_source_rgb(0.22, 0.22, 0.3)
+            cr.arc(cx, cy, r2, 0, 2 * 3.14159265)
+            cr.stroke()
+            r, g, b = self._health_color(self.health)
+            cr.set_source_rgb(r, g, b)
+            cr.arc(cx, cy, r2, -3.14159265 / 2, -3.14159265 / 2 + 2 * 3.14159265 * self.health / 100)
+            cr.stroke()
+
+        if self.charging:
+            self._bolt(cr, cx, cy - radius * 0.5, 15)
+
         cr.set_source_rgb(1, 1, 1)
-        cr.set_font_size(42)
+        cr.set_font_size(40)
         cr.select_font_face("DejaVu Sans", 0, 1)
         (xb, yb, tw, th, xadv, yadv) = cr.text_extents(f"%{int(self.percent)}")
-        cr.move_to(cx - tw / 2, cy + th / 2)
+        cr.move_to(cx - tw / 2, cy - radius * 0.12 + th / 2)
         cr.show_text(f"%{int(self.percent)}")
+
+        if self.health is not None:
+            r, g, b = self._health_color(self.health)
+            cr.set_source_rgb(r, g, b)
+            cr.set_font_size(13)
+            cr.select_font_face("DejaVu Sans", 0, 0)
+            htxt = f"{self.health:.0f}% {i18n.t('health')}"
+            (xb, yb, tw, th, xadv, yadv) = cr.text_extents(htxt)
+            cr.move_to(cx - tw / 2, cy + radius * 0.55)
+            cr.show_text(htxt)
+
         return False
 
 
@@ -670,9 +765,6 @@ class BatteryGraph(Gtk.DrawingArea):
         self.queue_draw()
 
     def on_draw(self, widget, cr):
-        cr.set_source_rgb(0.12, 0.12, 0.17)
-        cr.paint()
-
         w = widget.get_allocated_width()
         h = widget.get_allocated_height()
         pad_l, pad_r, pad_t, pad_b = 36, 12, 10, 20
@@ -706,14 +798,38 @@ class BatteryGraph(Gtk.DrawingArea):
             cr.show_text(i18n.t("graph_gathering"))
             return
 
-        cr.set_line_width(2)
-        cr.set_source_rgb(0.48, 0.78, 0.96)
-        cr.move_to(pad_l, pad_t + plot_h * (1 - max(0, min(100, self.samples[0])) / 100))
-        for i in range(1, n):
+        def point(i):
             x = pad_l + plot_w * (i / (n - 1))
             y = pad_t + plot_h * (1 - max(0, min(100, self.samples[i])) / 100)
+            return x, y
+
+        cr.set_source_rgba(0.44, 0.76, 0.98, 0.15)
+
+        x0, y0 = point(0)
+        cr.move_to(x0, y0)
+        for i in range(1, n):
+            x, y = point(i)
+            cr.line_to(x, y)
+        cr.line_to(pad_l + plot_w, pad_t + plot_h)
+        cr.line_to(pad_l, pad_t + plot_h)
+        cr.close_path()
+        cr.fill()
+
+        cr.set_line_width(2)
+        cr.set_source_rgb(0.48, 0.78, 0.96)
+        cr.move_to(x0, y0)
+        for i in range(1, n):
+            x, y = point(i)
             cr.line_to(x, y)
         cr.stroke()
+
+        xl, yl = point(n - 1)
+        cr.set_source_rgb(0.48, 0.78, 0.96)
+        cr.arc(xl, yl, 4, 0, 2 * 3.14159265)
+        cr.fill()
+        cr.set_source_rgb(0.1, 0.12, 0.16)
+        cr.arc(xl, yl, 2, 0, 2 * 3.14159265)
+        cr.fill()
 
         cr.set_source_rgb(0.6, 0.6, 0.7)
         cr.set_font_size(11)
@@ -740,7 +856,7 @@ class AboutDialog(Gtk.AboutDialog):
 class LiMonitoringWindow(Gtk.Window):
     def __init__(self, battery):
         super().__init__(title=f"{APP_NAME} — {i18n.t('window_title')}")
-        self.set_default_size(620, 800)
+        self.set_default_size(680, 840)
         self.set_border_width(0)
         self.battery = battery
         self.history = self.load_history()
@@ -815,27 +931,43 @@ class LiMonitoringWindow(Gtk.Window):
         dlg.destroy()
 
     def build_layout(self):
-        grid = Gtk.Grid(column_spacing=16, row_spacing=8)
+        grid = Gtk.Grid(column_spacing=16, row_spacing=12)
         grid.set_margin_start(20)
         grid.set_margin_end(20)
         grid.set_margin_bottom(20)
         grid.set_margin_top(6)
         self.vbox.pack_start(grid, True, True, 0)
 
-        title = Gtk.Label(label=APP_NAME)
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        header.get_style_context().add_class("card")
+        header.set_hexpand(True)
+        grid.attach(header, 0, 0, 3, 1)
+
+        tcol = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        tcol.set_hexpand(True)
+        title = Gtk.Label(label=APP_NAME, xalign=0)
         title.get_style_context().add_class("title")
-        grid.attach(title, 0, 0, 3, 1)
+        tcol.pack_start(title, False, False, 0)
 
-        self.sub_label = Gtk.Label(label=f"v{APP_VERSION}  •  {DEVELOPER}  •  {WEBSITE}")
+        self.sub_label = Gtk.Label(label=f"v{APP_VERSION}  •  {DEVELOPER}  •  {WEBSITE}", xalign=0)
         self.sub_label.get_style_context().add_class("subtitle")
-        grid.attach(self.sub_label, 0, 1, 3, 1)
+        tcol.pack_start(self.sub_label, False, False, 0)
+        header.pack_start(tcol, True, True, 0)
 
-        self.donut = DonutWidget(size=190)
-        grid.attach(self.donut, 0, 2, 1, 3)
+        self.cons_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        self.cons_box.set_valign(Gtk.Align.CENTER)
+        header.pack_start(self.cons_box, False, False, 0)
 
-        right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self.cons_pill = Gtk.Label()
+        self.cons_pill.get_style_context().add_class("state-pill")
+        self.cons_box.pack_start(self.cons_pill, False, False, 0)
+
+        self.donut = DonutWidget(size=200)
+        grid.attach(self.donut, 0, 1, 1, 2)
+
+        right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         right.set_valign(Gtk.Align.CENTER)
-        grid.attach(right, 1, 2, 2, 3)
+        grid.attach(right, 1, 1, 2, 2)
 
         self.status_label = Gtk.Label()
         self.status_label.set_halign(Gtk.Align.START)
@@ -851,13 +983,6 @@ class LiMonitoringWindow(Gtk.Window):
         self.cycle_label.set_halign(Gtk.Align.START)
         right.pack_start(self.cycle_label, False, False, 0)
 
-        self.cons_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        right.pack_start(self.cons_box, False, False, 0)
-
-        self.cons_pill = Gtk.Label()
-        self.cons_pill.get_style_context().add_class("state-pill")
-        self.cons_box.pack_start(self.cons_pill, False, False, 0)
-
         self.alarm_label = Gtk.Label()
         self.alarm_label.set_halign(Gtk.Align.START)
         self.alarm_label.get_style_context().add_class("grade")
@@ -865,22 +990,37 @@ class LiMonitoringWindow(Gtk.Window):
         self.alarm_label.set_no_show_all(True)
         right.pack_start(self.alarm_label, False, False, 0)
 
+        det_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        det_card.get_style_context().add_class("card")
+        grid.attach(det_card, 0, 3, 3, 1)
+
+        det_title = Gtk.Label(label=i18n.t("section_details"), xalign=0)
+        det_title.get_style_context().add_class("card-title")
+        det_card.pack_start(det_title, False, False, 0)
+
         self.detail_label = Gtk.Label()
         self.detail_label.set_selectable(True)
         self.detail_label.set_line_wrap(True)
         self.detail_label.set_justify(Gtk.Justification.LEFT)
         self.detail_label.set_halign(Gtk.Align.FILL)
         self.detail_label.set_valign(Gtk.Align.START)
-        self.detail_label.get_style_context().add_class("detail")
         self.detail_label.set_xalign(0)
-        grid.attach(self.detail_label, 0, 5, 3, 1)
+        det_card.pack_start(self.detail_label, False, False, 0)
 
-        self.graph = BatteryGraph(width=560, height=140)
-        grid.attach(self.graph, 0, 6, 3, 1)
+        graph_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        graph_card.get_style_context().add_class("card")
+        grid.attach(graph_card, 0, 4, 3, 1)
+
+        graph_title = Gtk.Label(label=i18n.t("section_history"), xalign=0)
+        graph_title.get_style_context().add_class("card-title")
+        graph_card.pack_start(graph_title, False, False, 0)
+
+        self.graph = BatteryGraph(width=560, height=150)
+        graph_card.pack_start(self.graph, False, False, 0)
 
         btns = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         btns.set_halign(Gtk.Align.CENTER)
-        grid.attach(btns, 0, 7, 3, 1)
+        grid.attach(btns, 0, 5, 3, 1)
 
         self.btn_optimize = Gtk.ToggleButton(label=f"⚡ {i18n.t('btn_optimize')}")
         self.btn_optimize.get_style_context().add_class("opt-btn")
@@ -1011,6 +1151,7 @@ class LiMonitoringWindow(Gtk.Window):
         if cap is not None:
             self.donut.set_percent(cap)
             self.graph.add_sample(cap)
+        self.donut.set_charging(status == "Charging")
 
         self.status_label.set_text(f"{status_icon(status)} {i18n.status_text(status)}")
 
@@ -1035,6 +1176,7 @@ class LiMonitoringWindow(Gtk.Window):
             self.health_label.set_text(f"🧪 {i18n.t('health')}: {h:.1f}%  ({i18n.health_grade(h)})")
         else:
             self.health_label.set_text(i18n.t("health_unknown"))
+        self.donut.set_health(h)
 
         cc = d.get("cycle_count")
         self.cycle_label.set_text(f"🔁 {i18n.t('cycle')}: {cc if cc is not None else '—'}")
