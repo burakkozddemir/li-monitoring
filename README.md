@@ -37,6 +37,20 @@ plus a one-click **conservation mode** toggle for Lenovo laptops and a guided
 
 ## 🚀 Installation
 
+### Quick install (one line)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/burakkozddemir/li-monitoring/main/install.sh | bash
+```
+
+Or download the bundle manually and install it:
+
+```bash
+curl -fsSL -o li-monitoring.flatpak \
+  https://github.com/burakkozddemir/li-monitoring/releases/latest/download/li-monitoring.flatpak
+flatpak install --user li-monitoring.flatpak
+```
+
 ### Flatpak / Flathub (recommended)
 
 ```bash
