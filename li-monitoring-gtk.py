@@ -21,7 +21,7 @@ CONFIG_FILE = Path.home() / ".config" / "li-monitoring" / "config.json"
 CTL = "/usr/local/bin/li-battery-ctl"
 
 APP_NAME = "li-monitoring"
-APP_VERSION = "1.5.0"
+APP_VERSION = "1.5.1"
 DEVELOPER = "Burak Özdemir"
 GITHUB = "https://github.com/burakkozddemir"
 WEBSITE = "https://codefein.com"
@@ -567,9 +567,32 @@ window {
     color: #e6e6ec;
     font-family: "DejaVu Sans", sans-serif;
 }
-.menubar { background-color: #131319; color: #c8c8d4; }
-.menubar > menuitem { padding: 4px 8px; }
-.menubar > menuitem:hover { background-color: #26263a; }
+menubar {
+    background-color: #131319;
+    color: #c8c8d4;
+    border-bottom: 1px solid #2b2b3a;
+}
+menubar > menuitem {
+    color: #c8c8d4;
+    padding: 4px 10px;
+}
+menubar > menuitem:hover {
+    background-color: #26263a;
+    color: #ffffff;
+}
+menu {
+    background-color: #1c1c27;
+    color: #d4d4de;
+    border: 1px solid #2b2b3a;
+}
+menu menuitem {
+    color: #d4d4de;
+    padding: 5px 14px;
+}
+menu menuitem:hover {
+    background-color: #2b2b3a;
+    color: #ffffff;
+}
 
 .title {
     font-size: 24px;
@@ -715,17 +738,6 @@ class DonutWidget(Gtk.DrawingArea):
         cr.set_source_rgb(r, g, b)
         cr.arc(cx, cy, radius, -3.14159265 / 2, -3.14159265 / 2 + 2 * 3.14159265 * self.percent / 100)
         cr.stroke()
-
-        if self.health is not None:
-            r2 = radius - line_w - 6
-            cr.set_line_width(5)
-            cr.set_source_rgb(0.22, 0.22, 0.3)
-            cr.arc(cx, cy, r2, 0, 2 * 3.14159265)
-            cr.stroke()
-            r, g, b = self._health_color(self.health)
-            cr.set_source_rgb(r, g, b)
-            cr.arc(cx, cy, r2, -3.14159265 / 2, -3.14159265 / 2 + 2 * 3.14159265 * self.health / 100)
-            cr.stroke()
 
         if self.charging:
             self._bolt(cr, cx, cy - radius * 0.5, 15)
