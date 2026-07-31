@@ -19,9 +19,17 @@ DATA_DIR = Path.home() / ".li-monitoring"
 LOG_FILE = DATA_DIR / "history.jsonl"
 CONFIG_FILE = Path.home() / ".config" / "li-monitoring" / "config.json"
 CTL = "/usr/local/bin/li-battery-ctl"
+IS_FLATPAK = Path("/.flatpak-info").exists()
+
+
+def ctl_cmd(*args):
+    base = ["sudo", "-n", CTL, *args]
+    if IS_FLATPAK:
+        return ["flatpak-spawn", "--host", *base]
+    return base
 
 APP_NAME = "li-monitoring"
-APP_VERSION = "1.6.0"
+APP_VERSION = "1.6.1"
 DEVELOPER = "Burak Özdemir"
 GITHUB = "https://github.com/burakkozddemir"
 WEBSITE = "https://codefein.com"
@@ -560,7 +568,7 @@ def status_icon(status):
 def get_conservation():
     try:
         out = subprocess.run(
-            ["sudo", "-n", CTL, "status"],
+            ctl_cmd("status"),
             capture_output=True, text=True, timeout=10,
         ).stdout
         for line in out.splitlines():
@@ -1188,7 +1196,7 @@ class LiMonitoringWindow(Gtk.Window):
     def run_ctl(self, arg):
         try:
             out = subprocess.run(
-                ["sudo", "-n", CTL, arg],
+                ctl_cmd(arg),
                 capture_output=True, text=True, timeout=15,
             )
             return out.returncode == 0

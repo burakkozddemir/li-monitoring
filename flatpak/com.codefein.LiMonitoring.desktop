@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=li-monitoring
+GenericName=Battery Analyzer
+Comment=Analyze and optimize battery health
+Exec=li-monitoring-gui
+Icon=com.codefein.LiMonitoring
+Terminal=false
+Categories=System;Monitor;Utility;
+Keywords=battery;power;health;optimization;
+StartupNotify=true

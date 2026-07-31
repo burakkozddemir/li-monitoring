@@ -14,7 +14,7 @@ DATA_DIR = Path.home() / ".li-monitoring"
 LOG_FILE = DATA_DIR / "history.jsonl"
 
 APP_NAME = "li-monitoring"
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.6.1"
 DEVELOPER = "Burak Özdemir"
 GITHUB = "https://github.com/burakkozddemir"
 WEBSITE = "https://codefein.com"

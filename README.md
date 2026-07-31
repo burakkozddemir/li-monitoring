@@ -13,6 +13,30 @@ Pil sağlığı analizi ve optimizasyon aracı (GTK 3). Lenovo konservasyon modu
 
 ## Kurulum
 
+### Flatpak / Flathub
+
+```bash
+flatpak install flathub com.codefein.LiMonitoring
+```
+
+Sandbox içinde konservasyon modu, `flatpak-spawn --host` üzerinden host'taki
+`li-battery-ctl`'yi (sudo NOPASSWD ile) çağırır. Host'ta da kurulu olmalıdır:
+
+```bash
+sudo install -m 755 li-battery-ctl.sh /usr/local/bin/li-battery-ctl
+echo 'burak ALL=(ALL) NOPASSWD: /usr/local/bin/li-battery-ctl' | sudo tee /etc/sudoers.d/li-battery
+```
+
+### Yerel derleme (flatpak-builder)
+
+```bash
+flatpak install -y flathub org.gnome.Platform//47 org.gnome.Sdk//47
+flatpak-builder --repo=build/repo build/app flatpak/com.codefein.LiMonitoring.json
+flatpak install --user build/repo com.codefein.LiMonitoring
+```
+
+### Sistem kurulumu (Flatpak olmadan)
+
 ```bash
 # Bağımlılıklar (GNOME masaüstünde GObject/GTK hazırdır)
 sudo apt install python3-gi gir1.2-gtk-3.0
@@ -30,6 +54,15 @@ sudo ln -sf "$PWD/li-monitoring.py"      /usr/local/bin/li-monitoring
 sudo ln -sf "$PWD/li-monitoring-gtk.py"  /usr/local/bin/li-monitoring-gui
 ```
 
+## Flathub Yayın Akışı
+
+1. Repoyu GitHub'da **public** yapın (`github.com/burakkozddemir/li-monitoring`).
+2. Etiketli sürüm push edin (`git tag v1.6.1 && git push origin v1.6.1`) —
+   GitHub Actions `.github/workflows/flatpak.yml` ile Flatpak'ı derler.
+3. Flathub'a kabul için [flathub/flathub](https://github.com/flathub/flathub)
+   deposuna PR açın ya da doğrudan kabul edildikten sonra repo'ya
+   `FLAT_MANAGER_TOKEN` secret'ı eklenip sürümler otomatik yayınlanır.
+
 ## Kullanım
 
 ```bash
@@ -45,4 +78,4 @@ li-monitoring-gui              # grafik arayüz
 
 ## Lisans
 
-Özel/GPLv3 — kullanmadan önce iletişime geçin.
+GPL-3.0-or-later — ayrıntılar için [LICENSE](LICENSE).

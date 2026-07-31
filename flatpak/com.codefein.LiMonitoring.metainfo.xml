@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.codefein.LiMonitoring</id>
+  <name>li-monitoring</name>
+  <summary>Battery health analysis and optimization tool</summary>
+  <developer id="com.codefein">
+    <name>Burak Özdemir</name>
+    <url>https://codefein.com</url>
+  </developer>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <description>
+    <p>
+      li-monitoring analyzes battery health and helps you extend battery lifetime.
+      It shows design vs. full capacity, charge cycles, temperature, voltage,
+      current and power draw in real time, and keeps a charge history graph.
+    </p>
+    <p>
+      On Lenovo laptops it can enable the battery conservation mode with a single
+      click (charge stops around 60-80%), and it includes a step-by-step
+      calibration guide.
+    </p>
+    <p>Available in English, Türkçe, Deutsch, Français and Español.</p>
+  </description>
+  <launchable type="desktop-id">com.codefein.LiMonitoring.desktop</launchable>
+  <url type="homepage">https://github.com/burakkozddemir/li-monitoring</url>
+  <url type="bugtracker">https://github.com/burakkozddemir/li-monitoring/issues</url>
+  <categories>
+    <category>System</category>
+    <category>Monitor</category>
+  </categories>
+  <keywords>
+    <keyword>battery</keyword>
+    <keyword>power</keyword>
+    <keyword>health</keyword>
+  </keywords>
+  <releases>
+    <release version="1.6.1" date="2026-08-01">
+      <description>
+        <p>Flatpak packaging support (Flatpak-spawn host integration for conservation mode).</p>
+      </description>
+    </release>
+    <release version="1.6.0" date="2026-08-01">
+      <description>
+        <p>Redesigned details section: metric grid, colored values and health/charge progress bars.</p>
+      </description>
+    </release>
+    <release version="1.5.1" date="2026-08-01">
+      <description>
+        <p>Single-ring donut and dark-themed menus.</p>
+      </description>
+    </release>
+    <release version="1.5.0" date="2026-08-01">
+      <description>
+        <p>Modern dark design refresh: cards, gradients, donut health ring, filled chart.</p>
+      </description>
+    </release>
+  </releases>
+  <screenshots>
+    <screenshot type="default">
+      <image type="source">https://raw.githubusercontent.com/burakkozddemir/li-monitoring/main/data/screenshot.png</image>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
+  <provides>
+    <binary>li-monitoring-gui</binary>
+    <binary>li-monitoring</binary>
+  </provides>
+</component>

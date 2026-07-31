@@ -1,0 +1,34 @@
+name: Flatpak
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  flatpak:
+    name: Build Flatpak
+    runs-on: ubuntu-latest
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:gnome-47
+      options: --privileged
+    strategy:
+      matrix:
+        arch: [x86_64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: li-monitoring.flatpak
+          manifest-path: flatpak/com.codefein.LiMonitoring.json
+          cache-key: flatpak-builder-${{ github.sha }}
+          arch: ${{ matrix.arch }}
+
+      - uses: flatpak/flatpak-github-actions/flat-manager@v6
+        with:
+          repository: flathub
+          flat-manager-url: https://flathub.org
+          token: ${{ secrets.FLAT_MANAGER_TOKEN }}
+          file: li-monitoring.flatpak

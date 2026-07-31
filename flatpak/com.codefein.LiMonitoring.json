@@ -1,0 +1,37 @@
+{
+  "id": "com.codefein.LiMonitoring",
+  "runtime": "org.gnome.Platform",
+  "runtime-version": "47",
+  "sdk": "org.gnome.Sdk",
+  "command": "li-monitoring-gui",
+  "finish-args": [
+    "--share=ipc",
+    "--socket=x11",
+    "--socket=wayland",
+    "--socket=session-bus",
+    "--talk-name=org.freedesktop.Flatpak",
+    "--filesystem=xdg-config/li-monitoring",
+    "--filesystem=~/.li-monitoring",
+    "--filesystem=/sys/class/power_supply:ro"
+  ],
+  "modules": [
+    {
+      "name": "li-monitoring",
+      "buildsystem": "simple",
+      "build-commands": [
+        "install -Dm755 li-monitoring-gtk.py /app/bin/li-monitoring-gui",
+        "install -Dm755 li-monitoring.py /app/bin/li-monitoring",
+        "install -Dm644 data/com.codefein.LiMonitoring.svg /app/share/icons/hicolor/scalable/apps/com.codefein.LiMonitoring.svg",
+        "install -Dm644 flatpak/com.codefein.LiMonitoring.desktop /app/share/applications/com.codefein.LiMonitoring.desktop",
+        "install -Dm644 flatpak/com.codefein.LiMonitoring.metainfo.xml /app/share/metainfo/com.codefein.LiMonitoring.metainfo.xml"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/burakkozddemir/li-monitoring.git",
+          "tag": "v1.6.1"
+        }
+      ]
+    }
+  ]
+}
