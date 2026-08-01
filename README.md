@@ -115,6 +115,15 @@ their laptop plugged in most of the time.
 
 ## 🔧 Development
 
+### Running tests
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+The suite covers battery health math, charge/discharge time estimates, value
+formatting, history-file handling and the CLI (no external dependencies).
+
 ### Local Flatpak build
 
 ```bash
@@ -130,6 +139,9 @@ li-monitoring/
 ├── li-monitoring.py              # CLI application
 ├── li-monitoring-gtk.py          # GTK 3 GUI
 ├── li-battery-ctl.sh             # conservation mode helper (host side)
+├── install.sh                    # one-line installer
+├── CHANGELOG.md
+├── tests/                        # unit tests (stdlib unittest)
 ├── flatpak/
 │   ├── com.codefein.LiMonitoring.json      # Flatpak manifest
 │   ├── com.codefein.LiMonitoring.desktop
@@ -137,12 +149,14 @@ li-monitoring/
 ├── data/
 │   ├── com.codefein.LiMonitoring.svg       # application icon
 │   └── screenshots/                         # README screenshots
-└── .github/workflows/flatpak.yml           # Flathub build pipeline
+└── .github/workflows/
+    ├── ci.yml                    # lint + tests on every push/PR
+    └── flatpak.yml               # builds & publishes the release bundle
 ```
 
 ### Release flow
 
-1. Tag a release (`git tag v1.6.2 && git push origin v1.6.2`).
+1. Tag a release (`git tag v1.7.0 && git push origin v1.7.0`).
 2. GitHub Actions builds the Flatpak bundle and publishes it to the GitHub
    Release automatically (`.github/workflows/flatpak.yml`).
 3. Users install it with the one-line installer from the top of this file.

@@ -35,6 +35,11 @@
     <keyword>health</keyword>
   </keywords>
   <releases>
+    <release version="1.7.0" date="2026-08-01">
+      <description>
+        <p>English CLI, automated tests, capped history log, and discharge time/format fixes.</p>
+      </description>
+    </release>
     <release version="1.6.2" date="2026-08-01">
       <description>
         <p>XDG-compliant data paths (config and history persist in the Flatpak sandbox) and updated GNOME runtime.</p>

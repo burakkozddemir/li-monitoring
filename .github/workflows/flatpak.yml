@@ -30,6 +30,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: li-monitoring.flatpak
+          files: |
+            li-monitoring.flatpak
+            install.sh
           overwrite: true
           generate_release_notes: true

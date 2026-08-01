@@ -23,9 +23,10 @@ if IS_FLATPAK:
 else:
     DATA_DIR = Path.home() / ".li-monitoring"
 LOG_FILE = DATA_DIR / "history.jsonl"
+HISTORY_MAX_ROWS = 10000
 
 APP_NAME = "li-monitoring"
-APP_VERSION = "1.6.2"
+APP_VERSION = "1.7.0"
 DEVELOPER = "Burak Özdemir"
 GITHUB = "https://github.com/burakkozddemir"
 WEBSITE = "https://codefein.com"
@@ -45,7 +46,7 @@ def fmt_energy(uj):
 
 
 def fmt_power(uw):
-    if uw >= 1_000_000:
+    if abs(uw) >= 1_000_000:
         return f"{uw / 1_000_000:.2f} W"
     return f"{uw / 1_000:.0f} mW"
 
@@ -55,7 +56,7 @@ def fmt_voltage(uv):
 
 
 def fmt_current(ua):
-    if ua >= 1_000_000:
+    if abs(ua) >= 1_000_000:
         return f"{ua / 1_000_000:.2f} A"
     return f"{ua / 1_000:.0f} mA"
 
@@ -164,17 +165,17 @@ def estimate(d):
     if status == "Discharging":
         if not pwr:
             return None
-        return en * 3600 / pwr
+        return en * 3600 / abs(pwr)
     if status == "Charging" and ef > en:
         if not pwr:
             return None
-        return (ef - en) * 3600 / pwr
+        return (ef - en) * 3600 / abs(pwr)
     return None
 
 
 def fmt_duration(seconds):
     if seconds is None:
-        return "hesaplanamıyor"
+        return "n/a"
     seconds = int(seconds)
     h, rem = divmod(seconds, 3600)
     m, s = divmod(rem, 60)
@@ -183,76 +184,75 @@ def fmt_duration(seconds):
 
 def battery_health_grade(h):
     if h is None:
-        return "belirsiz"
+        return "unknown"
     if h >= 90:
-        return "Mükemmel"
+        return "Excellent"
     if h >= 80:
-        return "İyi"
+        return "Good"
     if h >= 70:
-        return "Orta"
+        return "Fair"
     if h >= 50:
-        return "Zayıf"
-    return "Kritik"
+        return "Poor"
+    return "Critical"
 
 
 def verbose_report(d, bat):
-    print(f"\n{C_BOLD}=== {APP_NAME} v{APP_VERSION} — Lİ-ON ==={C_RESET}")
-    print(f"  Analiz zamanı : {d['ts']}")
-    print(f"  {C_DIM}Geliştirici: {DEVELOPER} | {GITHUB} | {WEBSITE}{C_RESET}")
+    print(f"\n{C_BOLD}=== {APP_NAME} v{APP_VERSION} ==={C_RESET}")
+    print(f"  Analyzed at   : {d['ts']}")
+    print(f"  {C_DIM}Developer: {DEVELOPER} | {GITHUB} | {WEBSITE}{C_RESET}")
 
-    print(f"\n{C_CYAN}▸ Pil Kimliği{C_RESET}")
-    print(f"  Üretici       : {d.get('manufacturer') or '?'}")
+    print(f"\n{C_CYAN}▸ Battery Identity{C_RESET}")
+    print(f"  Manufacturer  : {d.get('manufacturer') or '?'}")
     print(f"  Model         : {d.get('model') or '?'}")
-    print(f"  Seri No       : {d.get('serial') or '?'}")
-    print(f"  Kimya         : {d.get('technology') or '?'}")
-    print(f"  Şarj döngüsü  : {d.get('cycle_count') if d.get('cycle_count') is not None else '?'} döngü")
+    print(f"  Serial No     : {d.get('serial') or '?'}")
+    print(f"  Chemistry     : {d.get('technology') or '?'}")
+    print(f"  Charge cycles : {d.get('cycle_count') if d.get('cycle_count') is not None else '?'}")
 
     h = health(d)
-    print(f"\n{C_CYAN}▸ Sağlık Analizi{C_RESET}")
+    print(f"\n{C_CYAN}▸ Health Analysis{C_RESET}")
     if h is not None:
-        print(f"  Pil sağlığı   : {bar(h)} {h:.1f}%  ({battery_health_grade(h)})")
-        print(f"  Yıpranma      : {100 - h:.1f}%")
+        print(f"  Battery health: {bar(h)} {h:.1f}%  ({battery_health_grade(h)})")
+        print(f"  Wear level    : {100 - h:.1f}%")
     ef = d.get("energy_full")
     efd = d.get("energy_full_design")
     if ef is not None and efd is not None:
-        print(f"  Mevcut kap    : {fmt_energy(ef)}")
-        print(f"  Tasarım kap   : {fmt_energy(efd)}")
-        print(f"  Kap kaybı     : {fmt_energy(efd - ef)}")
+        print(f"  Current cap   : {fmt_energy(ef)}")
+        print(f"  Design cap    : {fmt_energy(efd)}")
+        print(f"  Capacity loss : {fmt_energy(efd - ef)}")
 
     cap = d.get("capacity")
-    print(f"\n{C_CYAN}▸ Şarj Durumu{C_RESET}")
+    print(f"\n{C_CYAN}▸ Charge Status{C_RESET}")
     if cap is not None:
-        print(f"  Doluluk       : {bar(cap)} {cap}%")
+        print(f"  Charge level  : {bar(cap)} {cap}%")
     en = d.get("energy_now")
     if en is not None:
-        print(f"  Enerji        : {fmt_energy(en)}")
-    print(f"  Durum         : {d.get('status') or '?'}")
+        print(f"  Energy        : {fmt_energy(en)}")
+    print(f"  Status        : {d.get('status') or '?'}")
 
-    print(f"\n{C_CYAN}▸ Elektriksel Değerler{C_RESET}")
+    print(f"\n{C_CYAN}▸ Electrical Values{C_RESET}")
     if d.get("voltage_now") is not None:
-        print(f"  Voltaj        : {fmt_voltage(d['voltage_now'])}")
+        print(f"  Voltage       : {fmt_voltage(d['voltage_now'])}")
     if d.get("current_now") is not None:
-        print(f"  Akım          : {fmt_current(d['current_now'])}")
+        print(f"  Current       : {fmt_current(d['current_now'])}")
     if d.get("power_now") is not None:
-        print(f"  Güç           : {fmt_power(d['power_now'])}")
+        print(f"  Power         : {fmt_power(d['power_now'])}")
     if d.get("temp") is not None:
-        print(f"  Sıcaklık      : {d['temp'] / 10:.1f} °C")
+        print(f"  Temperature   : {d['temp'] / 10:.1f} °C")
 
-    print(f"\n{C_CYAN}▸ Süre Tahmini{C_RESET}")
+    print(f"\n{C_CYAN}▸ Time Estimates{C_RESET}")
     est = estimate(d)
     if est is not None:
-        label = "Şarja kalan" if d.get("status") == "Charging" else "Bitime kalan"
-        print(f"  {label:12}: {fmt_duration(est)}")
+        label = "Time to full  " if d.get("status") == "Charging" else "Time remaining"
+        print(f"  {label}: {fmt_duration(est)}")
     else:
-        print(f"  Süre tahmini  : mevcut değil (pil dolu ya da ölçüm yok)")
+        print(f"  Time estimate : unavailable (battery full or no power reading)")
 
     p = bat / "uevent"
     if p.is_file():
-        print(f"\n{C_CYAN}▸ Çekirdek Uevent{C_RESET}")
+        print(f"\n{C_CYAN}▸ Kernel Uevent{C_RESET}")
         for line in p.read_text().strip().splitlines():
             print(f"  {line}")
 
-    dch = d.get("charge_full") or d.get("energy_full")
     print()
 
 
@@ -261,24 +261,24 @@ def battery_status_widget(bat):
     cap = d.get("capacity")
     status = d.get("status", "?")
     cap_c = cap_color(cap)
-    print(f"\n  {C_BOLD}PİL DURUMU{C_RESET}   {C_DIM}Ctrl+C ile çık{C_RESET}")
+    print(f"\n  {C_BOLD}BATTERY STATUS{C_RESET}   {C_DIM}Ctrl+C to quit{C_RESET}")
     print(f"  {cap_c}{bar(cap)}{C_RESET}  {cap if cap is not None else '?'}%  {C_DIM}({status}){C_RESET}")
 
     h = health(d)
     if h is not None:
-        print(f"  Sağlık        : {health_color(h)}{h:.1f}%{C_RESET}  ({battery_health_grade(h)})")
+        print(f"  Health        : {health_color(h)}{h:.1f}%{C_RESET}  ({battery_health_grade(h)})")
     ef = d.get("energy_full")
     efd = d.get("energy_full_design")
     if ef is not None and efd is not None:
-        print(f"  Kapasite      : {fmt_energy(ef)} / {fmt_energy(efd)}")
+        print(f"  Capacity      : {fmt_energy(ef)} / {fmt_energy(efd)}")
     if d.get("power_now") is not None:
-        print(f"  Güç           : {fmt_power(d['power_now'])}")
+        print(f"  Power         : {fmt_power(d['power_now'])}")
     est = estimate(d)
     if est is not None:
-        label = "Şarja kalan" if status == "Charging" else "Bitime kalan"
-        print(f"  {label:12}: {fmt_duration(est)}")
+        label = "Time to full" if status == "Charging" else "Time remaining"
+        print(f"  {label:14}: {fmt_duration(est)}")
     if d.get("temp") is not None:
-        print(f"  Sıcaklık      : {d['temp'] / 10:.1f} °C")
+        print(f"  Temperature   : {d['temp'] / 10:.1f} °C")
     print()
 
 
@@ -317,12 +317,24 @@ def append_history(row):
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     with LOG_FILE.open("a") as f:
         f.write(json.dumps(row) + "\n")
+    trim_history(HISTORY_MAX_ROWS)
+
+
+def trim_history(max_rows):
+    if LOG_FILE.stat().st_size < 1_500_000:
+        return
+    rows = load_history()
+    if len(rows) <= max_rows:
+        return
+    with LOG_FILE.open("w") as f:
+        for r in rows[-max_rows:]:
+            f.write(json.dumps(r) + "\n")
 
 
 def history_report():
     rows = load_history()
     if not rows:
-        print("Geçmiş verisi yok. Önce '--log' ile kayıt başlat.")
+        print("No history yet. Start logging with '--log'.")
         return
 
     caps = [r["capacity"] for r in rows if r.get("capacity") is not None]
@@ -335,24 +347,24 @@ def history_report():
         if r.get("power_now"):
             powers.append(r["power_now"])
 
-    print(f"\n{C_BOLD}=== GEÇMİŞ ANALİZİ ({len(rows)} kayıt) ==={C_RESET}")
+    print(f"\n{C_BOLD}=== HISTORY ANALYSIS ({len(rows)} records) ==={C_RESET}")
     if caps:
-        print(f"  İlk kayıt     : {rows[0]['ts']}")
-        print(f"  Son kayıt     : {rows[-1]['ts']}")
-        print(f"  Doluluk (ort) : {statistics.mean(caps):.1f}%")
-        print(f"  Doluluk (min) : {min(caps)}%")
-        print(f"  Doluluk (max) : {max(caps)}%")
+        print(f"  First record  : {rows[0]['ts']}")
+        print(f"  Last record   : {rows[-1]['ts']}")
+        print(f"  Charge (avg)  : {statistics.mean(caps):.1f}%")
+        print(f"  Charge (min)  : {min(caps)}%")
+        print(f"  Charge (max)  : {max(caps)}%")
         if len(caps) > 1:
-            print(f"  Sapma         : {statistics.stdev(caps):.1f}%")
+            print(f"  Std deviation : {statistics.stdev(caps):.1f}%")
 
-    for label, key in [("Deşarj", "Discharging"), ("Şarj", "Charging")]:
+    for label, key in [("Discharging", "Discharging"), ("Charging", "Charging")]:
         lst = caps_by_status[key]
         if lst:
-            print(f"  {label} ort.     : {statistics.mean(lst):.1f}% (n={len(lst)})")
+            print(f"  {label} avg   : {statistics.mean(lst):.1f}% (n={len(lst)})")
 
     if powers:
-        print(f"  Güç (ort)     : {fmt_power(statistics.mean(powers))}")
-        print(f"  Güç (tepe)    : {fmt_power(max(powers))}")
+        print(f"  Power (avg)   : {fmt_power(statistics.mean(powers))}")
+        print(f"  Power (peak)  : {fmt_power(max(powers))}")
 
     h_vals = []
     for r in rows:
@@ -361,8 +373,8 @@ def history_report():
         if ef and efd:
             h_vals.append(ef / efd * 100)
     if h_vals:
-        print(f"  Sağlık (ilk)  : {h_vals[0]:.1f}%")
-        print(f"  Sağlık (son)  : {h_vals[-1]:.1f}%")
+        print(f"  Health (first): {h_vals[0]:.1f}%")
+        print(f"  Health (last) : {h_vals[-1]:.1f}%")
 
     print()
 
@@ -381,27 +393,27 @@ def service_watch(bat, interval):
 def main():
     ap = argparse.ArgumentParser(
         prog="li-monitoring",
-        description="Li-poly/Li-ion pil için detaylı sağlık ve şarj analizi.",
+        description="Detailed health and charge analysis for Li-poly/Li-ion batteries.",
     )
-    ap.add_argument("--watch", "-w", action="store_true", help="Canlı izleme modu")
-    ap.add_argument("--interval", "-i", type=float, default=5.0, help="İzleme aralığı (sn), varsayılan 5")
-    ap.add_argument("--times", "-n", type=int, default=0, help="İzleme adedi, 0 = sonsuza dek")
-    ap.add_argument("--log", action="store_true", help="Geçmişe kaydet (arka plan/servis için)")
-    ap.add_argument("--history", action="store_true", help="Geçmiş kayıtlarının analizi")
-    ap.add_argument("--json", action="store_true", help="Çıktıyı JSON olarak ver")
-    ap.add_argument("--version", "-v", action="store_true", help="Sürüm ve geliştirici bilgisi")
+    ap.add_argument("--watch", "-w", action="store_true", help="live monitoring mode")
+    ap.add_argument("--interval", "-i", type=float, default=5.0, help="refresh interval in seconds (default 5)")
+    ap.add_argument("--times", "-n", type=int, default=0, help="number of refreshes, 0 = run forever")
+    ap.add_argument("--log", action="store_true", help="log samples to history (background/service use)")
+    ap.add_argument("--history", action="store_true", help="analyze the recorded history")
+    ap.add_argument("--json", action="store_true", help="output a one-shot snapshot as JSON")
+    ap.add_argument("--version", "-v", action="store_true", help="show version and developer info")
     args = ap.parse_args()
 
     if args.version:
         print(f"{APP_NAME} v{APP_VERSION}")
-        print(f"Geliştirici: {DEVELOPER}")
-        print(f"GitHub     : {GITHUB}")
-        print(f"Web        : {WEBSITE}")
+        print(f"Developer : {DEVELOPER}")
+        print(f"GitHub    : {GITHUB}")
+        print(f"Web       : {WEBSITE}")
         return
 
     bat = find_battery()
     if bat is None:
-        print("Pil bulunamadı. Bu bir dizüstü bilgisayar olmalı.")
+        print("No battery found. Run this on a laptop.")
         sys.exit(1)
 
     if args.history:

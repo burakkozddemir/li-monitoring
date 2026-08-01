@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Syntax check
+        run: |
+          python3 -m py_compile li-monitoring.py li-monitoring-gtk.py
+          bash -n li-battery-ctl.sh install.sh
+
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -v

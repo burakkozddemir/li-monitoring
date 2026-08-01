@@ -42,7 +42,7 @@ def ctl_cmd(*args):
     return base
 
 APP_NAME = "li-monitoring"
-APP_VERSION = "1.6.2"
+APP_VERSION = "1.7.0"
 DEVELOPER = "Burak Özdemir"
 GITHUB = "https://github.com/burakkozddemir"
 WEBSITE = "https://codefein.com"
@@ -522,7 +522,7 @@ def fmt_energy(uj):
 
 
 def fmt_power(uw):
-    if uw >= 1_000_000:
+    if abs(uw) >= 1_000_000:
         return f"{uw / 1_000_000:.2f} W"
     return f"{uw / 1_000:.0f} mW"
 
@@ -532,7 +532,7 @@ def fmt_voltage(uv):
 
 
 def fmt_current(ua):
-    if ua >= 1_000_000:
+    if abs(ua) >= 1_000_000:
         return f"{ua / 1_000_000:.2f} A"
     return f"{ua / 1_000:.0f} mA"
 
@@ -562,9 +562,9 @@ def estimate(d):
     if en <= 0 or not pwr:
         return None
     if status == "Discharging":
-        return en * 3600 / pwr
+        return en * 3600 / abs(pwr)
     if status == "Charging" and ef > en:
-        return (ef - en) * 3600 / pwr
+        return (ef - en) * 3600 / abs(pwr)
     return None
 
 
@@ -1291,6 +1291,26 @@ class LiMonitoringWindow(Gtk.Window):
         val.set_text(text)
 
     def refresh(self):
+        try:
+            self._refresh_impl()
+        except Exception:
+            pass
+        return True
+
+    def _trim_history(self, max_rows=10000):
+        try:
+            if LOG_FILE.stat().st_size < 1_500_000:
+                return
+            rows = self.load_history()
+            if len(rows) <= max_rows:
+                return
+            with LOG_FILE.open("w") as f:
+                for r in rows[-max_rows:]:
+                    f.write(json.dumps(r) + "\n")
+        except OSError:
+            pass
+
+    def _refresh_impl(self):
         d = {}
         for name in (
             "capacity", "status", "technology", "manufacturer", "model", "serial",
@@ -1433,6 +1453,7 @@ class LiMonitoringWindow(Gtk.Window):
                 row["ts"] = time.strftime("%Y-%m-%dT%H:%M:%S")
                 with LOG_FILE.open("a") as f:
                     f.write(json.dumps(row) + "\n")
+                self._trim_history()
                 self.logged_last = now
                 if cap is not None:
                     self.cap_samples.append(cap)
