@@ -34,4 +34,3 @@ jobs:
             li-monitoring.flatpak
             install.sh
           overwrite_files: true
-          generate_release_notes: true
