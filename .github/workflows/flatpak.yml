@@ -33,5 +33,5 @@ jobs:
           files: |
             li-monitoring.flatpak
             install.sh
-          overwrite: true
+          overwrite_files: true
           generate_release_notes: true
