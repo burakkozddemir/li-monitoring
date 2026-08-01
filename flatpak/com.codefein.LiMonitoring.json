@@ -26,8 +26,8 @@
         {
           "type": "git",
           "url": "https://github.com/burakkozddemir/li-monitoring.git",
-          "tag": "v1.6.2",
-          "commit": "6df5d0f8446f25a2d76362465b8994437f338789"
+          "tag": "v1.7.0",
+          "commit": "25609f0d480b1a790469a37aeae5f240c729ab91"
         }
       ]
     }
