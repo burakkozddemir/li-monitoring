@@ -1,5 +1,8 @@
 name: Flatpak
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
