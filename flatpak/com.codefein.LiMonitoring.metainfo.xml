@@ -35,6 +35,11 @@
     <keyword>health</keyword>
   </keywords>
   <releases>
+    <release version="1.7.1" date="2026-08-01">
+      <description>
+        <p>Conservation mode is now a clear on/off switch in the GUI.</p>
+      </description>
+    </release>
     <release version="1.7.0" date="2026-08-01">
       <description>
         <p>English CLI, automated tests, capped history log, and discharge time/format fixes.</p>

@@ -42,7 +42,7 @@ def ctl_cmd(*args):
     return base
 
 APP_NAME = "li-monitoring"
-APP_VERSION = "1.7.0"
+APP_VERSION = "1.7.1"
 DEVELOPER = "Burak Özdemir"
 GITHUB = "https://github.com/burakkozddemir"
 WEBSITE = "https://codefein.com"
@@ -708,6 +708,32 @@ menu menuitem:hover {
 }
 .pill-on { background-color: #2a7a4d; color: #dfffd0; }
 .pill-off { background-color: #4a4a58; color: #d0d0da; }
+.cons-switch-label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #e6e6ec;
+}
+switch {
+    background-color: #2a2a36;
+    border: 1px solid #3a3a4a;
+    border-radius: 16px;
+    min-width: 44px;
+    min-height: 24px;
+}
+switch:checked {
+    background-color: #2a7a4d;
+    border-color: #3aa06b;
+}
+switch slider {
+    background-color: #cfcfda;
+    border-radius: 16px;
+    min-width: 20px;
+    min-height: 20px;
+    margin: 1px;
+}
+switch:checked slider {
+    background-color: #a5e8c2;
+}
 """
 
 
@@ -961,6 +987,7 @@ class LiMonitoringWindow(Gtk.Window):
         self.cap_samples = [r["capacity"] for r in self.history[-240:] if r.get("capacity") is not None]
         self.logged_last = None
         self.conservation = None
+        self._cons_updating = False
 
         self.provider = Gtk.CssProvider()
         self.provider.load_from_data(CSS)
@@ -1017,7 +1044,7 @@ class LiMonitoringWindow(Gtk.Window):
             return
         i18n.set_lang(code)
         self.set_title(f"{APP_NAME} — {i18n.t('window_title')}")
-        self.btn_optimize.set_label(f"⚡ {i18n.t('btn_optimize')}")
+        self.cons_switch_label.set_text(f"⚡ {i18n.t('btn_optimize')}")
         self.btn_calibrate.set_label(f"🔄 {i18n.t('btn_calibrate')}")
         self.sub_label.set_text(f"v{APP_VERSION}  •  {DEVELOPER}  •  {WEBSITE}")
         self.refresh()
@@ -1159,11 +1186,17 @@ class LiMonitoringWindow(Gtk.Window):
         btns.set_halign(Gtk.Align.CENTER)
         grid.attach(btns, 0, 5, 3, 1)
 
-        self.btn_optimize = Gtk.ToggleButton(label=f"⚡ {i18n.t('btn_optimize')}")
-        self.btn_optimize.get_style_context().add_class("opt-btn")
-        self.btn_optimize.get_style_context().add_class("btn-optimize")
-        self.btn_optimize.connect("toggled", self.on_optimize_toggled)
-        btns.pack_start(self.btn_optimize, False, False, 0)
+        self.cons_switch_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        self.cons_switch_box.set_halign(Gtk.Align.CENTER)
+        self.cons_switch_label = Gtk.Label(label=f"⚡ {i18n.t('btn_optimize')}")
+        self.cons_switch_label.get_style_context().add_class("cons-switch-label")
+        self.cons_switch = Gtk.Switch()
+        self.cons_switch.set_valign(Gtk.Align.CENTER)
+        self.cons_switch.get_style_context().add_class("cons-switch")
+        self.cons_switch.connect("notify::active", self.on_optimize_toggled)
+        self.cons_switch_box.pack_start(self.cons_switch_label, False, False, 0)
+        self.cons_switch_box.pack_start(self.cons_switch, False, False, 0)
+        btns.pack_start(self.cons_switch_box, False, False, 0)
 
         self.btn_calibrate = Gtk.Button(label=f"🔄 {i18n.t('btn_calibrate')}")
         self.btn_calibrate.get_style_context().add_class("opt-btn")
@@ -1192,18 +1225,28 @@ class LiMonitoringWindow(Gtk.Window):
 
     def apply_conservation_ui(self):
         c = self.conservation
-        if c is None:
-            self.cons_pill.set_text(i18n.t("status_unknown"))
-            self.cons_pill.get_style_context().add_class("pill-off")
-            self.btn_optimize.set_sensitive(False)
-        elif c:
-            self.cons_pill.set_text(i18n.t("conservation_on"))
-            self.cons_pill.get_style_context().add_class("pill-on")
-            self.btn_optimize.set_active(True)
-        else:
-            self.cons_pill.set_text(i18n.t("conservation_off"))
-            self.cons_pill.get_style_context().add_class("pill-off")
-            self.btn_optimize.set_active(False)
+        pill_ctx = self.cons_pill.get_style_context()
+        pill_ctx.remove_class("pill-on")
+        pill_ctx.remove_class("pill-off")
+        self._cons_updating = True
+        try:
+            if c is None:
+                self.cons_pill.set_text(i18n.t("status_unknown"))
+                pill_ctx.add_class("pill-off")
+                self.cons_switch.set_active(False)
+                self.cons_switch.set_sensitive(False)
+            elif c:
+                self.cons_pill.set_text(i18n.t("conservation_on"))
+                pill_ctx.add_class("pill-on")
+                self.cons_switch.set_active(True)
+                self.cons_switch.set_sensitive(True)
+            else:
+                self.cons_pill.set_text(i18n.t("conservation_off"))
+                pill_ctx.add_class("pill-off")
+                self.cons_switch.set_active(False)
+                self.cons_switch.set_sensitive(True)
+        finally:
+            self._cons_updating = False
         return False
 
     def run_ctl(self, arg):
@@ -1216,9 +1259,11 @@ class LiMonitoringWindow(Gtk.Window):
         except Exception:
             return False
 
-    def on_optimize_toggled(self, btn):
-        GLib.idle_add(lambda: btn.set_sensitive(False))
-        target = btn.get_active()
+    def on_optimize_toggled(self, switch, pspec=None):
+        if getattr(self, "_cons_updating", False):
+            return
+        target = switch.get_active()
+        switch.set_sensitive(False)
 
         def work():
             if target:
@@ -1231,7 +1276,7 @@ class LiMonitoringWindow(Gtk.Window):
         threading.Thread(target=work, daemon=True).start()
 
     def after_optimize(self, ok, target):
-        self.btn_optimize.set_sensitive(True)
+        self.cons_switch.set_sensitive(True)
         self.refresh_conservation()
         if ok:
             msg = i18n.t("conservation_on_long") if target else i18n.t("conservation_off_long")

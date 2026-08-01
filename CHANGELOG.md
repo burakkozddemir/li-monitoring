@@ -2,6 +2,12 @@
 
 All notable changes to li-monitoring are documented in this file.
 
+## [1.7.1] - 2026-08-01
+
+### Changed
+- Conservation mode is now a proper on/off switch (`Gtk.Switch`) in the GUI
+  instead of a toggle button, with a clear checked/unchecked style.
+
 ## [1.7.0] - 2026-08-01
 
 ### Added

@@ -26,7 +26,7 @@ LOG_FILE = DATA_DIR / "history.jsonl"
 HISTORY_MAX_ROWS = 10000
 
 APP_NAME = "li-monitoring"
-APP_VERSION = "1.7.0"
+APP_VERSION = "1.7.1"
 DEVELOPER = "Burak Özdemir"
 GITHUB = "https://github.com/burakkozddemir"
 WEBSITE = "https://codefein.com"
