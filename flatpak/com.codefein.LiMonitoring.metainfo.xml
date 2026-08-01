@@ -16,9 +16,9 @@
       current and power draw in real time, and keeps a charge history graph.
     </p>
     <p>
-      On Lenovo laptops it can enable the battery conservation mode with a single
-      click (charge stops around 60-80%), and it includes a step-by-step
-      calibration guide.
+      On Lenovo laptops, the native (non-sandboxed) install can enable the
+      battery conservation mode with a single click (charge stops around 60-80%),
+      and the app includes a step-by-step calibration guide.
     </p>
     <p>Available in English, Türkçe, Deutsch, Français and Español.</p>
   </description>

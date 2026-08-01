@@ -51,19 +51,12 @@ curl -fsSL -o li-monitoring.flatpak \
 flatpak install --user li-monitoring.flatpak
 ```
 
-### Flatpak / Flathub (recommended)
+### Flatpak (GitHub Release)
 
-```bash
-flatpak install flathub com.codefein.LiMonitoring
-```
-
-Inside the sandbox, conservation mode is handled with `flatpak-spawn --host`,
-which invokes `li-battery-ctl` on the host. Make sure it is installed there too:
-
-```bash
-sudo install -m 755 li-battery-ctl.sh /usr/local/bin/li-battery-ctl
-echo 'burak ALL=(ALL) NOPASSWD: /usr/local/bin/li-battery-ctl' | sudo tee /etc/sudoers.d/li-battery
-```
+The sandboxed Flatpak build is **monitoring-only**: conservation mode touches
+kernel-level ACPI methods and is not permitted from inside the sandbox, so the
+Optimize button disables itself. Use the **System-wide (without Flatpak)**
+install below for the full conservation-mode experience.
 
 ### System-wide (without Flatpak)
 
@@ -125,7 +118,7 @@ their laptop plugged in most of the time.
 ### Local Flatpak build
 
 ```bash
-flatpak install -y flathub org.gnome.Platform//47 org.gnome.Sdk//47
+flatpak install -y flathub org.gnome.Platform//50 org.gnome.Sdk//50
 flatpak-builder --repo=build/repo build/app flatpak/com.codefein.LiMonitoring.json
 flatpak install --user build/repo com.codefein.LiMonitoring
 ```
@@ -147,13 +140,12 @@ li-monitoring/
 └── .github/workflows/flatpak.yml           # Flathub build pipeline
 ```
 
-### Flathub release flow
+### Release flow
 
-1. Tag a release (`git tag v1.6.1 && git push origin v1.6.1`).
-2. GitHub Actions builds the Flatpak bundle automatically
-   (`.github/workflows/flatpak.yml`).
-3. Once the app is accepted on Flathub, add the `FLAT_MANAGER_TOKEN` secret to
-   the repository and releases publish automatically.
+1. Tag a release (`git tag v1.6.2 && git push origin v1.6.2`).
+2. GitHub Actions builds the Flatpak bundle and publishes it to the GitHub
+   Release automatically (`.github/workflows/flatpak.yml`).
+3. Users install it with the one-line installer from the top of this file.
 
 ## 📜 License
 
