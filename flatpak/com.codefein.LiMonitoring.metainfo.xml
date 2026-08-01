@@ -35,6 +35,11 @@
     <keyword>health</keyword>
   </keywords>
   <releases>
+    <release version="1.6.2" date="2026-08-01">
+      <description>
+        <p>XDG-compliant data paths (config and history persist in the Flatpak sandbox) and updated GNOME runtime.</p>
+      </description>
+    </release>
     <release version="1.6.1" date="2026-08-01">
       <description>
         <p>Flatpak packaging support (Flatpak-spawn host integration for conservation mode).</p>

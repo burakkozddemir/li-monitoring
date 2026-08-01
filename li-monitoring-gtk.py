@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import sys
 import signal
 import json
@@ -15,11 +16,23 @@ gi.require_version("cairo", "1.0")
 from gi.repository import Gtk, GLib, Gdk, cairo
 
 POWER_SUPPLY = Path("/sys/class/power_supply")
-DATA_DIR = Path.home() / ".li-monitoring"
-LOG_FILE = DATA_DIR / "history.jsonl"
-CONFIG_FILE = Path.home() / ".config" / "li-monitoring" / "config.json"
-CTL = "/usr/local/bin/li-battery-ctl"
 IS_FLATPAK = Path("/.flatpak-info").exists()
+
+
+def _xdg(env, fallback):
+    val = os.environ.get(env)
+    return Path(val) if val else Path.home() / fallback
+
+
+if IS_FLATPAK:
+    DATA_DIR = _xdg("XDG_DATA_HOME", ".local/share") / "li-monitoring"
+    CONFIG_DIR = _xdg("XDG_CONFIG_HOME", ".config") / "li-monitoring"
+else:
+    DATA_DIR = Path.home() / ".li-monitoring"
+    CONFIG_DIR = Path.home() / ".config" / "li-monitoring"
+LOG_FILE = DATA_DIR / "history.jsonl"
+CONFIG_FILE = CONFIG_DIR / "config.json"
+CTL = "/usr/local/bin/li-battery-ctl"
 
 
 def ctl_cmd(*args):
@@ -29,7 +42,7 @@ def ctl_cmd(*args):
     return base
 
 APP_NAME = "li-monitoring"
-APP_VERSION = "1.6.1"
+APP_VERSION = "1.6.2"
 DEVELOPER = "Burak Özdemir"
 GITHUB = "https://github.com/burakkozddemir"
 WEBSITE = "https://codefein.com"

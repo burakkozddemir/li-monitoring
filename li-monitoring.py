@@ -10,11 +10,22 @@ import statistics
 from pathlib import Path
 
 POWER_SUPPLY = Path("/sys/class/power_supply")
-DATA_DIR = Path.home() / ".li-monitoring"
+IS_FLATPAK = Path("/.flatpak-info").exists()
+
+
+def _xdg(env, fallback):
+    val = os.environ.get(env)
+    return Path(val) if val else Path.home() / fallback
+
+
+if IS_FLATPAK:
+    DATA_DIR = _xdg("XDG_DATA_HOME", ".local/share") / "li-monitoring"
+else:
+    DATA_DIR = Path.home() / ".li-monitoring"
 LOG_FILE = DATA_DIR / "history.jsonl"
 
 APP_NAME = "li-monitoring"
-APP_VERSION = "1.6.1"
+APP_VERSION = "1.6.2"
 DEVELOPER = "Burak Özdemir"
 GITHUB = "https://github.com/burakkozddemir"
 WEBSITE = "https://codefein.com"

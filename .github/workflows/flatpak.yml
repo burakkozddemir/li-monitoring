@@ -26,9 +26,12 @@ jobs:
           cache-key: flatpak-builder-${{ github.sha }}
           arch: ${{ matrix.arch }}
 
-      - uses: flatpak/flatpak-github-actions/flat-manager@v6
-        with:
-          repository: flathub
-          flat-manager-url: https://flathub.org
-          token: ${{ secrets.FLAT_MANAGER_TOKEN }}
-          file: li-monitoring.flatpak
+      - name: Publish bundle to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release create "${GITHUB_REF_NAME}" --generate-notes
+          fi
+          gh release upload "${GITHUB_REF_NAME}" li-monitoring.flatpak --clobber
