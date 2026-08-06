@@ -1,49 +1,39 @@
 # ⚡ li-monitoring
 
-**A GTK battery health analyzer and optimizer for Linux laptops.**
+**Linux dizüstü bilgisayarlar için GTK tabanlı pil sağlığı analizörü ve optimizasyon aracı.**
 
-li-monitoring turns raw battery telemetry from your laptop into a clear picture:
-real-time capacity, charge cycles, temperature, voltage, current and power draw —
-plus a one-click **conservation mode** toggle for Lenovo laptops and a guided
-**calibration** routine to keep your battery's capacity measurement accurate.
+li-monitoring, laptopunuzun ham pil telemetrisini net bir tabloya dönüştürür: anlık kapasite, şarj döngüsü, sıcaklık, voltaj, akım ve güç tüketimi — ayrıca Lenovo laptoplarda **tek tıkla koruma modu (conservation mode)** ve pil kapasite ölçümünü doğru tutan adım adım **kalibrasyon** rehberi sunar.
 
-![Main window](data/screenshots/main.png)
+![Ana pencere](data/screenshots/main.png)
 
-## ✨ Features
+## ✨ Özellikler
 
-- 🧪 **Battery health analysis** — design vs. full capacity, wear level and grade
-  (Excellent / Good / Fair / Poor / Critical)
-- 📈 **Live charge history graph** — up to 240 samples, logged every minute
-- 🍩 **Donut gauge** — charge percentage with a charging indicator, health ring
-  and color-coded status
-- ⚡ **One-click conservation mode** (Lenovo) — stops charging around 60–80% to
-  extend battery lifetime, via the ACPI `SBMC`/`GBMD` methods (`acpi_call`)
-- 🔄 **Calibration guide** — step-by-step 5-step procedure to recalibrate the
-  capacity gauge
-- 🧊 **Thermal & electrical telemetry** — temperature, voltage, current, power,
-  energy, time-to-full / time-to-empty estimates
-- 🗂️ **Rich detail panel** — a color-coded metric grid with health and charge
-  progress bars
-- 🌐 **5 languages** — English, Türkçe, Deutsch, Français, Español (switchable at
-  runtime)
-- 🎨 **Modern dark theme** — card-based layout, gradients and crisp typography
-- 📊 **CLI companion** — live monitoring, history and one-shot JSON output
+- 🧪 **Pil sağlığı analizi** — tasarım vs. tam kapasite, aşınma seviyesi ve not (Mükemmel / İyi / Orta / Zayıf / Kritik)
+- 📈 **Canlı şarj geçmişi grafiği** — dakikada bir loglanan 240 örneğe kadar
+- 🍩 **Donut göstergesi** — şarj yüzdesi, şarj göstergesi, sağlık halkası ve renk kodlu durum
+- ⚡ **Tek tıkla koruma modu** (Lenovo) — şarjı %60–80 civarında durdurup pil ömrünü uzatır; ACPI `SBMC`/`GBMD` metodları (`acpi_call`) üzerinden çalışır
+- 🔄 **Kalibrasyon rehberi** — kapasite göstergesini yeniden kalibre etmek için 5 adımlık prosedür
+- 🧊 **Termal ve elektriksel telemetri** — sıcaklık, voltaj, akım, güç, enerji, dolu/boş kalma süresi tahminleri
+- 🗂️ **Zengin detay paneli** — renk kodlu metrik ızgarası, sağlık ve şarj ilerleme çubukları
+- 🌐 **5 dil** — Türkçe, English, Deutsch, Français, Español (çalışma zamanında değiştirilebilir)
+- 🎨 **Modern koyu tema** — kart tabanlı düzen, gradyanlar ve keskin tipografi
+- 📊 **CLI eşlikçisi** — canlı izleme, geçmiş ve tek seferlik JSON çıktısı
 
-### Screenshots
+### Ekran görüntüleri
 
-| Calibration guide | About |
+| Kalibrasyon rehberi | Hakkında |
 |---|---|
-| ![Calibration](data/screenshots/calibration.png) | ![About](data/screenshots/about.png) |
+| ![Kalibrasyon](data/screenshots/calibration.png) | ![Hakkında](data/screenshots/about.png) |
 
-## 🚀 Installation
+## 🚀 Kurulum
 
-### Quick install (one line)
+### Hızlı kurulum (tek satır)
 
 ```bash
 curl -fsSL https://github.com/burakkozddemir/li-monitoring/releases/latest/download/install.sh | bash
 ```
 
-Or download the bundle manually and install it:
+Ya da paketi manuel indirip kurun:
 
 ```bash
 curl -fsSL -o li-monitoring.flatpak \
@@ -53,78 +43,70 @@ flatpak install --user li-monitoring.flatpak
 
 ### Flatpak (GitHub Release)
 
-The sandboxed Flatpak build is **monitoring-only**: conservation mode touches
-kernel-level ACPI methods and is not permitted from inside the sandbox, so the
-Optimize button disables itself. Use the **System-wide (without Flatpak)**
-install below for the full conservation-mode experience.
+Sandbox'lı Flatpak sürümü **yalnızca izleme** amaçlıdır: koruma modu çekirdek seviyesindeki ACPI metodlarına dokunduğu için sandbox içinden izinli değildir; bu yüzden Optimize düğmesi kendini devre dışı bırakır. Tam koruma modu deneyimi için aşağıdaki **Sistem genelinde (Flatpak'sız)** kurulumu kullanın.
 
-### System-wide (without Flatpak)
+### Sistem genelinde (Flatpak'sız)
 
 ```bash
-# Dependencies (already present on GNOME desktops)
+# Bağımlılıklar (GNOME masaüstlerinde zaten mevcut)
 sudo apt install python3-gi gir1.2-gtk-3.0
 
-# acpi-call for Lenovo conservation mode (optional but recommended)
+# Lenovo koruma modu için acpi-call (opsiyonel ama önerilir)
 sudo apt install acpi-call-dkms linux-headers-$(uname -r)
 sudo modprobe acpi_call
 
-# Helper script + passwordless sudo rule
+# Yardımcı betik + şifresiz sudo kuralı
 sudo install -m 755 li-battery-ctl.sh /usr/local/bin/li-battery-ctl
 echo 'burak ALL=(ALL) NOPASSWD: /usr/local/bin/li-battery-ctl' | sudo tee /etc/sudoers.d/li-battery
 
-# CLI + GUI entry points
+# CLI + GUI giriş noktaları
 sudo ln -sf "$PWD/li-monitoring.py"      /usr/local/bin/li-monitoring
 sudo ln -sf "$PWD/li-monitoring-gtk.py"  /usr/local/bin/li-monitoring-gui
 ```
 
-> **Note:** Replace `burak` in the sudoers rule with your own username.
-> Conservation mode is only available on hardware that exposes the Lenovo
-> `SBMC`/`GBMD` ACPI methods — the Optimize button disables itself gracefully
-> otherwise.
+> **Not:** sudoers kuralındaki `burak` kullanıcı adını kendi adınızla değiştirin.
+> Koruma modu yalnızca Lenovo `SBMC`/`GBMD` ACPI metodlarını sunan donanımlarda kullanılabilir; aksi halde Optimize düğümü kendiliğinden devre dışı kalır.
 
-## 🖥️ Usage
+## 🖥️ Kullanım
 
-Launch the graphical interface:
+Grafik arayüzü başlatın:
 
 ```bash
 li-monitoring-gui
 ```
 
-The terminal CLI:
+Terminal CLI'ı:
 
 ```bash
-li-monitoring --watch          # live monitoring in the terminal
-li-monitoring --history        # dump the charge history log
-li-monitoring --json           # one-shot battery snapshot as JSON
-li-monitoring --version        # version and developer info
+li-monitoring --watch          # terminalde canlı izleme
+li-monitoring --history        # şarj geçmişi logunu dök
+li-monitoring --json           # pil anlık görüntüsü (JSON)
+li-monitoring --version        # sürüm ve geliştirici bilgisi
 ```
 
-### Interpreting battery health
+### Pil sağlığı yorumu
 
-| Grade | Remaining capacity | Meaning |
+| Not | Kalan kapasite | Anlamı |
 |---|---|---|
-| 🟢 Excellent | ≥ 95% | Like new |
-| 🟢 Good | ≥ 80% | Slight wear, no action needed |
-| 🟡 Fair | ≥ 60% | Noticeable wear; consider conservation mode |
-| 🟠 Poor | ≥ 40% | Significant degradation |
-| 🔴 Critical | < 40% | Replace the battery soon |
+| 🟢 Mükemmel | ≥ %95 | Yeni gibi |
+| 🟢 İyi | ≥ %80 | Hafif aşınma, müdahale gerekmez |
+| 🟡 Orta | ≥ %60 | Belirgin aşınma; koruma modu önerilir |
+| 🟠 Zayıf | ≥ %40 | Ciddi bozulma |
+| 🔴 Kritik | < %40 | Pili yakında değiştirin |
 
-The **Optimize** button toggles Lenovo conservation mode: with it on, charging
-stops around 60–80%, which dramatically reduces cell wear for people who keep
-their laptop plugged in most of the time.
+**Optimize** düğmesi Lenovo koruma modunu açar/kapatır: açıkken şarj %60–80 civarında durur; bu, laptopu çoğu zaman prize takılı kullananlar için hücre aşınmasını önemli ölçüde azaltır.
 
-## 🔧 Development
+## 🔧 Geliştirme
 
-### Running tests
+### Testleri çalıştırma
 
 ```bash
 python3 -m unittest discover -s tests -v
 ```
 
-The suite covers battery health math, charge/discharge time estimates, value
-formatting, history-file handling and the CLI (no external dependencies).
+Test takımı pil sağlığı matematiği, şarj/boşalma süresi tahminleri, değer biçimlendirme, geçmiş dosyası işleme ve CLI'ı kapsar (harici bağımlılık yok).
 
-### Local Flatpak build
+### Yerel Flatpak derlemesi
 
 ```bash
 flatpak install -y flathub org.gnome.Platform//50 org.gnome.Sdk//50
@@ -132,39 +114,38 @@ flatpak-builder --repo=build/repo build/app flatpak/com.codefein.LiMonitoring.js
 flatpak install --user build/repo com.codefein.LiMonitoring
 ```
 
-### Repository layout
+### Depo düzeni
 
 ```
 li-monitoring/
-├── li-monitoring.py              # CLI application
-├── li-monitoring-gtk.py          # GTK 3 GUI
-├── li-battery-ctl.sh             # conservation mode helper (host side)
-├── install.sh                    # one-line installer
+├── li-monitoring.py              # CLI uygulaması
+├── li-monitoring-gtk.py          # GTK 3 arayüzü
+├── li-battery-ctl.sh             # koruma modu yardımcısı (ana sistem tarafı)
+├── install.sh                    # tek satırlık kurulumcu
 ├── CHANGELOG.md
-├── tests/                        # unit tests (stdlib unittest)
+├── tests/                        # birim testleri (stdlib unittest)
 ├── flatpak/
-│   ├── com.codefein.LiMonitoring.json      # Flatpak manifest
+│   ├── com.codefein.LiMonitoring.json      # Flatpak manifesti
 │   ├── com.codefein.LiMonitoring.desktop
 │   └── com.codefein.LiMonitoring.metainfo.xml
 ├── data/
-│   ├── com.codefein.LiMonitoring.svg       # application icon
-│   └── screenshots/                         # README screenshots
+│   ├── com.codefein.LiMonitoring.svg       # uygulama ikonu
+│   └── screenshots/                         # README ekran görüntüleri
 └── .github/workflows/
-    ├── ci.yml                    # lint + tests on every push/PR
-    └── flatpak.yml               # builds & publishes the release bundle
+    ├── ci.yml                    # her push/PR'de lint + test
+    └── flatpak.yml               # sürüm paketini derleyip yayınlar
 ```
 
-### Release flow
+### Sürüm akışı
 
-1. Tag a release (`git tag v1.7.0 && git push origin v1.7.0`).
-2. GitHub Actions builds the Flatpak bundle and publishes it to the GitHub
-   Release automatically (`.github/workflows/flatpak.yml`).
-3. Users install it with the one-line installer from the top of this file.
+1. Bir sürüm etiketi oluşturun (`git tag v1.7.0 && git push origin v1.7.0`).
+2. GitHub Actions Flatpak paketini derler ve GitHub Release'e otomatik yayınlar (`.github/workflows/flatpak.yml`).
+3. Kullanıcılar bu dosyanın başındaki tek satırlık kurulumcuyla yükler.
 
-## 📜 License
+## 📜 Lisans
 
-GPL-3.0-or-later — see [LICENSE](LICENSE).
+GPL-3.0-or-later — bkz. [LICENSE](LICENSE).
 
 ---
 
-**Developer:** Burak Özdemir · [github.com/burakkozddemir](https://github.com/burakkozddemir) · [codefein.com](https://codefein.com)
+**Geliştirici:** Burak Özdemir · [github.com/burakkozddemir](https://github.com/burakkozddemir) · [codefein.com](https://codefein.com)
